@@ -36,10 +36,24 @@ exports.create = (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  var data = _.map(items, (text, id) => {
-    return { id, text };
+  fs.readdir(exports.dataDir, (err, files) => {
+    if (err) {
+      callback(err);
+    }
+    var data = _.map(files, (id) => {
+      id = id.slice(0, id.length - 4);
+      return {
+        id: id,
+        text: id,
+      };
+    });
+    callback(null, data);
   });
-  callback(null, data);
+
+  // we need to create file path === exports.datadir
+  // fs.readdir(path, callback) to read contents of directory
+  // error first
+  // create data array
 };
 
 exports.readOne = (id, callback) => {
