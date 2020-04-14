@@ -7,10 +7,32 @@ var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
+// create a new file for each ToDo
+// should use the generated unique id as the filename
+// should only save todo text contents in file
+// should pass a todo object to the callback on success
+// should return an empty array when there are no todos
+// should return an array with all saved todos
+// should return an error for non-existant todo
+// should find a todo by ID
+
 exports.create = (text, callback) => {
-  var id = counter.getNextUniqueId();
-  items[id] = text;
-  callback(null, { id, text });
+  // counter.getNextUniqueID needs a callbackfn
+  counter.getNextUniqueId((err, id) => {
+    var filePath = path.join(exports.dataDir, `${id}.txt`);
+    fs.writeFile(filePath, text, (err) => {
+      if (err) {
+        callback(err);
+      } else {
+        callback(null, { id, text });
+      }
+    });
+  });
+
+  // callback(null, { id, text });
+  // create a file path ... localhost/path/"{id}.txt"
+  // create variable, set equal to, path.join(exports.dataDir, `${id}.txt`)
+  //fs.writefile(filepath, text-value/data, error callback) in order to create a file
 };
 
 exports.readAll = (callback) => {
