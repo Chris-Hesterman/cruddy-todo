@@ -56,14 +56,31 @@ exports.readAll = (callback) => {
   // create data array
 };
 
+//check if file exists - fs.access(path, fs.constants.F_OK, callback(err))
+//if no err it exists
+
 exports.readOne = (id, callback) => {
-  var text = items[id];
-  if (!text) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback(null, { id, text });
-  }
+  fs.access(path.join(exports.dataDir, `${id}.txt`), (err) => {
+    if (err) {
+      callback(err);
+    } else {
+      fs.readFile(path.join(exports.dataDir, `${id}.txt`), (err, data) => {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, { id: id, text: data.toString() });
+        }
+      });
+    }
+  });
 };
+
+// var text = items[id];
+// if (!text) {
+//   callback(new Error(`No item with id: ${id}`));
+// } else {
+//   callback(null, { id, text });
+// }
 
 exports.update = (id, text, callback) => {
   var item = items[id];
