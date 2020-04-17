@@ -2,7 +2,9 @@ const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
 const Promise = require('bluebird');
-const fs = Promise.promisifyAll(require('fs'));
+const fs = require('fs');
+const readdirP = Promise.promisify(require('fs').readdir);
+const readFileP = Promise.promisify(require('fs').readFile);
 var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
@@ -31,53 +33,47 @@ exports.create = (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  var filePromises = [];
-
-  fs.readdir(exports.dataDir, (err, files) => {
+  fs.readdir(exports.dataDir, (err, filenames) => {
     if (err) {
-      callback(err);
-    }
-    _.each(files, (file) => {
-      filePromises.push(fs.readFileAsync(`./data.${file}`));
-    });
-    Promise.all(filePromises).then((dataArray) => {
-      _.each(dataArray, (file) => {
-        return;
+      console.error(err);
+    } else {
+      var promisedTodos = _.map(filenames, (filename) => {
+        return readFileP(`${exports.dataDir}/${filename}`).then((todoData) => {
+          console.log(todoData.toString());
+          return {
+            id: filename.slice(0, filename.length - 4),
+            text: todoData.toString(),
+          };
+        });
       });
+    }
+    Promise.all(promisedTodos).then((todosArray) => {
+      console.log(todosArray);
+      callback(null, todosArray);
     });
-    // var data = _.map(files, (id) => {
-    //   id = id.slice(0, id.length - 4);
-    //   return {le(`./data/${id}.txt`)
-    //     id: id,
-    //     text: id,
-    //   };
-    // });
-    // callback(null, data);
   });
-
-  // we need to create file path === exports.datadir
-  // fs.readdir(path, callback) to read contents of directory
-  // error first
-  // create data array
 };
 
 //check if file exists - fs.access(path, fs.constants.F_OK, callback(err))
 //if no err it exists
-
 exports.readOne = (id, callback) => {
-  fs.access(path.join(exports.dataDir, `${id}.txt`), (err) => {
-    if (err) {
-      callback(err);
-    } else {
-      fs.readFile(path.join(exports.dataDir, `${id}.txt`), (err, data) => {
-        if (err) {
-          callback(err);
-        } else {
-          callback(null, { id: id, text: data.toString() });
-        }
-      });
+  fs.access(
+    path.join(exports.dataDir, `${id}.txt`),
+    fs.constants.F_OK,
+    (err) => {
+      if (err) {
+        callback(err);
+      } else {
+        fs.readFile(path.join(exports.dataDir, `${id}.txt`), (err, data) => {
+          if (err) {
+            callback(err);
+          } else {
+            callback(null, { id: id, text: data.toString() });
+          }
+        });
+      }
     }
-  });
+  );
 };
 
 exports.update = (id, text, callback) => {
