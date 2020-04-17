@@ -33,20 +33,15 @@ exports.create = (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  fs.readdir(exports.dataDir, (err, filenames) => {
-    if (err) {
-      console.error(err);
-    } else {
-      var promisedTodos = _.map(filenames, (filename) => {
-        return readFileP(`${exports.dataDir}/${filename}`).then((todoData) => {
-          console.log(todoData.toString());
-          return {
-            id: filename.slice(0, filename.length - 4),
-            text: todoData.toString(),
-          };
-        });
+  readdirP(exports.dataDir).then((filenames) => {
+    var promisedTodos = _.map(filenames, (filename) => {
+      return readFileP(`${exports.dataDir}/${filename}`).then((todoData) => {
+        return {
+          id: filename.slice(0, filename.length - 4),
+          text: todoData.toString(),
+        };
       });
-    }
+    });
     Promise.all(promisedTodos).then((todosArray) => {
       console.log(todosArray);
       callback(null, todosArray);
