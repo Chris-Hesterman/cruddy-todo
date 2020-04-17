@@ -5,6 +5,8 @@ const Promise = require('bluebird');
 const fs = require('fs');
 const readdirP = Promise.promisify(require('fs').readdir);
 const readFileP = Promise.promisify(require('fs').readFile);
+const writeFileP = Promise.promisify(require('fs').writeFile);
+const accessP = Promise.promisify(require('fs').access);
 var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
@@ -19,10 +21,9 @@ var items = {};
 // should find a todo by ID
 
 exports.create = (text, callback) => {
-  // counter.getNextUniqueID needs a callbackfn
   counter.getNextUniqueId((err, id) => {
     var filePath = path.join(exports.dataDir, `${id}.txt`);
-    fs.writeFile(filePath, text, (err) => {
+    writeFileP(filePath, text).then((err) => {
       if (err) {
         callback(err);
       } else {
@@ -52,23 +53,13 @@ exports.readAll = (callback) => {
 //check if file exists - fs.access(path, fs.constants.F_OK, callback(err))
 //if no err it exists
 exports.readOne = (id, callback) => {
-  fs.access(
-    path.join(exports.dataDir, `${id}.txt`),
-    fs.constants.F_OK,
-    (err) => {
-      if (err) {
-        callback(err);
-      } else {
-        fs.readFile(path.join(exports.dataDir, `${id}.txt`), (err, data) => {
-          if (err) {
-            callback(err);
-          } else {
-            callback(null, { id: id, text: data.toString() });
-          }
-        });
-      }
-    }
-  );
+  readFileP(path.join(exports.dataDir, `${id}.txt`))
+    .then((data) => {
+      callback(null, { id: id, text: data.toString() });
+    })
+    .catch((err) => {
+      callback(err);
+    });
 };
 
 exports.update = (id, text, callback) => {
@@ -78,12 +69,8 @@ exports.update = (id, text, callback) => {
     if (err) {
       callback(err);
     } else {
-      fs.writeFile(filePath, text, (err) => {
-        if (err) {
-          callback(err);
-        } else {
-          callback(null, { id, text });
-        }
+      writeFileP(filePath, text).then((text) => {
+        callback(null, { id, text });
       });
     }
   });
