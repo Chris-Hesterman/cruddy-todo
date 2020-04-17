@@ -1,8 +1,8 @@
-const fs = require('fs');
 const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
-
+const Promise = require('bluebird');
+const fs = Promise.promisifyAll(require('fs'));
 var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
@@ -28,26 +28,31 @@ exports.create = (text, callback) => {
       }
     });
   });
-
-  // callback(null, { id, text });
-  // create a file path ... localhost/path/"{id}.txt"
-  // create variable, set equal to, path.join(exports.dataDir, `${id}.txt`)
-  //fs.writefile(filepath, text-value/data, error callback) in order to create a file
 };
 
 exports.readAll = (callback) => {
+  var filePromises = [];
+
   fs.readdir(exports.dataDir, (err, files) => {
     if (err) {
       callback(err);
     }
-    var data = _.map(files, (id) => {
-      id = id.slice(0, id.length - 4);
-      return {
-        id: id,
-        text: id,
-      };
+    _.each(files, (file) => {
+      filePromises.push(fs.readFileAsync(`./data.${file}`));
     });
-    callback(null, data);
+    Promise.all(filePromises).then((dataArray) => {
+      _.each(dataArray, (file) => {
+        return;
+      });
+    });
+    // var data = _.map(files, (id) => {
+    //   id = id.slice(0, id.length - 4);
+    //   return {le(`./data/${id}.txt`)
+    //     id: id,
+    //     text: id,
+    //   };
+    // });
+    // callback(null, data);
   });
 
   // we need to create file path === exports.datadir
@@ -75,13 +80,6 @@ exports.readOne = (id, callback) => {
   });
 };
 
-// var text = items[id];
-// if (!text) {
-//   callback(new Error(`No item with id: ${id}`));
-// } else {
-//   callback(null, { id, text });
-// }
-
 exports.update = (id, text, callback) => {
   var filePath = path.join(exports.dataDir, `${id}.txt`);
 
@@ -98,14 +96,6 @@ exports.update = (id, text, callback) => {
       });
     }
   });
-
-  // var item = items[id];
-  // if (!item) {
-  //   callback(new Error(`No item with id: ${id}`));
-  // } else {
-  //   items[id] = text;
-  //   callback(null, { id, text });
-  // }
 };
 
 exports.delete = (id, callback) => {
@@ -119,15 +109,6 @@ exports.delete = (id, callback) => {
     }
   });
 };
-
-// var item = items[id];
-// delete items[id];
-// if (!item) {
-//   // report an error if item not found
-//   callback(new Error(`No item with id: ${id}`));
-// } else {
-//   callback();
-// }
 
 // Config+Initialization code -- DO NOT MODIFY /////////////////////////////////
 
