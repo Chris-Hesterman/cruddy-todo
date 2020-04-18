@@ -65,15 +65,19 @@ exports.readOne = (id, callback) => {
 exports.update = (id, text, callback) => {
   var filePath = path.join(exports.dataDir, `${id}.txt`);
 
-  fs.readFile(filePath, (err) => {
-    if (err) {
+  accessP(filePath, fs.constants.F_OK)
+    .then(() => {
+      writeFileP(filePath, text)
+        .then((text) => {
+          callback(null, { id, text });
+        })
+        .catch((err) => {
+          callback(err);
+        });
+    })
+    .catch((err) => {
       callback(err);
-    } else {
-      writeFileP(filePath, text).then((text) => {
-        callback(null, { id, text });
-      });
-    }
-  });
+    });
 };
 
 exports.delete = (id, callback) => {
