@@ -7,6 +7,7 @@ const readdirP = Promise.promisify(require('fs').readdir);
 const readFileP = Promise.promisify(require('fs').readFile);
 const writeFileP = Promise.promisify(require('fs').writeFile);
 const accessP = Promise.promisify(require('fs').access);
+const unlinkP = Promise.promisify(require('fs').unlink);
 var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
@@ -82,14 +83,14 @@ exports.update = (id, text, callback) => {
 
 exports.delete = (id, callback) => {
   var filePath = path.join(exports.dataDir, `${id}.txt`);
-  fs.unlink(filePath, (err) => {
-    if (err) {
-      callback(err);
-    } else {
+  unlinkP(filePath)
+    .then(() => {
       console.log('file deleted!');
       callback();
-    }
-  });
+    })
+    .catch((err) => {
+      callback(err);
+    });
 };
 
 // Config+Initialization code -- DO NOT MODIFY /////////////////////////////////
